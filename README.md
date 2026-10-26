@@ -144,7 +144,7 @@ Server URL precedence: `--server` flag → `CONTEXT_HANDOFF_SERVER` env → `htt
 ```bash
 cp skill/context-handoff/templates/context-template.md context.md
 # edit context.md…
-handoff save context.md
+handoff save context.md          # recovery prompt in the session language (zh default, en via --lang en)
 cat context.md | handoff save --ttl 1800 --title "login refactor handoff" -
 ```
 

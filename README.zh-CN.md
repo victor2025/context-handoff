@@ -146,7 +146,7 @@ handoff health
 ```bash
 cp skill/context-handoff/templates/context-template.md context.md
 # 编辑 context.md…
-handoff save context.md
+handoff save context.md          # recovery prompt in the session language (zh default, en via --lang en)
 cat context.md | handoff save --ttl 1800 --title "登录重构交接" -
 ```
 

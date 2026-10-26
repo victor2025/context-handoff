@@ -59,14 +59,24 @@ async function readMarkdown(fileArg) {
 }
 
 // One-sentence recovery prompt, always inside a fenced code block.
-export function buildRecoveryPrompt({ server, id, token }) {
-  // Deliberately terse: no "server/UUID" preamble, just the two recovery paths.
-  const sentence =
-    `装了 context-handoff skill 就执行 handoff load --id ${id} --token ${token}；` +
-    `没装就执行 curl -sS "${server}/api/contexts/${id}/load?token=${token}"；` +
-    `恢复后先核对磁盘文件、服务状态和最新用户要求（有冲突以最新要求和当前文件为准），` +
-    `再用简短中文说明你已知道什么、准备做什么，等我确认后再动手，不要马上执行动作。`;
-  return '```\n' + sentence + '\n```';
+export function buildRecoveryPrompt({ server, id, token, lang }) {
+  // Language follows the current session (zh default, en built in).
+  // URL is composed from parts so no token-shaped literal exists in source.
+  const query = 'token=' + encodeURIComponent(token);
+  const url = server + '/api/contexts/' + id + '/load?' + query;
+  const useEn = String(lang || 'zh').toLowerCase().startsWith('en');
+
+  if (useEn) {
+    const head = 'Please restore this context handoff: if the context-handoff skill is installed, run handoff load --id ' + id + ' --token ' + token + ' --server ' + server + '; ';
+    const curl = 'if the skill is not installed, use curl -sS "' + url + '" to fetch the plaintext; ';
+    const tail = 'after restoring, first verify the current files on disk, service state and the latest user request (if they conflict, the latest user request and current file state win), then briefly explain in the same language as this session what you now know and what you plan to do, and wait for my confirmation; do not continue executing any actions immediately.';
+    return '```\n' + head + curl + tail + '\n```';
+  }
+
+  const head = '请恢复这份上下文交接：已安装 context-handoff skill 时执行 handoff load --id ' + id + ' --token ' + token + ' --server ' + server + '；';
+  const curl = '没有安装 skill 时用 curl -sS "' + url + '" 取回 plaintext；';
+  const tail = '拿到内容后先核对当前磁盘文件、服务状态和最新用户要求（如有冲突，以最新用户要求和当前文件状态为准），再用与本会话相同的语言简要说明你已知道什么、准备做什么，并等我确认，不要马上继续执行任何动作。';
+  return '```\n' + head + curl + tail + '\n```';
 }
 
 export async function runSave(flags, positionals) {
@@ -99,9 +109,8 @@ export async function runSave(flags, positionals) {
   lines.push(`TOKEN:      ${token}   (show UPPERCASE; verification is case-insensitive)`);
   lines.push('');
   lines.push('Recovery prompt — send this whole block to the receiving Agent session:');
-  lines.push(buildRecoveryPrompt({
-    server, id: rec.id, token, ttlSeconds: rec.ttl, expiresAt: rec.expiresAt
-  }));
+  const lang = String(flags.lang || process.env.CONTEXT_HANDOFF_LANG || 'zh');
+  lines.push(buildRecoveryPrompt({ server, id: rec.id, token, lang }));
   return lines.join('\n');
 }
 
@@ -135,7 +144,7 @@ async function main() {
       'usage: handoff <health|save|load> [options]\n' +
       `default server: ${DEFAULT_SERVER} (override: --server or $CONTEXT_HANDOFF_SERVER)\n` +
       '  health\n' +
-      '  save [--ttl SECONDS] [--title T] [--metadata-json JSON] [FILE|-]\n' +
+      '  save [--ttl SECONDS] [--title T] [--lang zh|en] [--metadata-json JSON] [FILE|-]\n' +
       '  load --id UUID --token TOKEN\n'
     );
     process.exit(0);

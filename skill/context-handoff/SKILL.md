@@ -87,18 +87,25 @@ Recovery prompt — send this whole block to the receiving Agent session:
 ```
 followed by a fenced code block containing exactly **one sentence** that includes:
 
-- the `handoff load` command with UUID and TOKEN (skill installed),
-- a **ready-to-run `curl` command** with the token in the query string for agents without the skill:
+- the `handoff load` command with UUID, TOKEN and `--server` (skill installed),
+- when the skill is **not** installed, a **ready-to-run `curl` command** with the token in the query string:
   `curl -sS "<server>/api/contexts/<id>/load?token=<TOKEN>"`,
 - an instruction to verify current disk files, service state, and the latest user request,
 - the precedence rule: latest user request and current file state win on conflict,
-- an instruction to give the user a short Chinese summary of what is known and what will be done,
+- an instruction to reply briefly **in the same language as the current session** about what is known and what will be done,
 - an instruction to **wait for user confirmation and not immediately start acting**.
 
-Example (one sentence, one line):
+### Recovery prompt language
+
+The recovery prompt **must be written in the same language as the current session**.
+
+- `handoff save` emits Chinese by default.
+- For an English session: `handoff save --lang en context.md` (or `CONTEXT_HANDOFF_LANG=en`).
+- For any other session language: translate the prompt yourself and keep **every** required element — the skill command with UUID/TOKEN/`--server`, the ready-to-run `curl`, the verification step, and the confirmation requirement.
+Example (one sentence, one line, zh):
 
 ```
-装了 context-handoff skill 就执行 handoff load --id 11111111-2222-4333-8444-555555555555 --token ABCDEFGHJKMNPQRSTVWXYZ；没装就执行 curl -sS "https://ctx.victor2022.dpdns.org/api/contexts/11111111-2222-4333-8444-555555555555/load?token=ABCDEFGHJKMNPQRSTVWXYZ"；恢复后先核对磁盘文件、服务状态和最新用户要求（有冲突以最新要求和当前文件为准），再用简短中文说明你已知道什么、准备做什么，等我确认后再动手，不要马上执行动作。
+请恢复这份上下文交接：已安装 context-handoff skill 时执行 handoff load --id {{UUID}} --token {{TOKEN}} --server {{SERVER}}； 没有安装 skill 时用 curl -sS "{{SERVER}}/api/contexts/{{UUID}}/load?token={{TOKEN}}" 取回 plaintext； 拿到内容后先核对当前磁盘文件、服务状态和最新用户要求（如有冲突，以最新用户要求和当前文件状态为准）， 再用与本会话相同的语言简要说明你已知道什么、准备做什么，并等我确认，不要马上继续执行任何动作。
 ```
 
 `load` prints only the restored markdown plaintext on stdout (machine/human readable). Errors go to stderr with a non-zero exit code (`NOT_FOUND`, `EXPIRED`, `WRONG_TOKEN`, `DECRYPTION_FAILED`, …).

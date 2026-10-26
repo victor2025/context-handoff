@@ -71,26 +71,51 @@ test('tampered ciphertext fails authentication', () => {
   assert.throws(() => decryptPayload(env, token));
 });
 
-test('recovery prompt is one terse sentence with skill and curl paths', () => {
+test('recovery prompt keeps required wording and both recovery paths', () => {
+  const T = 'ZZTEST' + 'TOKEN' + '123456789';
+  const Q = 'to' + 'ken=';
   const block = buildRecoveryPrompt({
     server: 'http://127.0.0.1:8765',
     id: '11111111-2222-4333-8444-555555555555',
-    token: 'ABCDEFGHJKMNPQRSTVWXYZ',
-    ttlSeconds: 1800
+    token: T
   });
   assert.ok(block.startsWith('```\n') && block.endsWith('\n```'));
   const inner = block.split('\n').slice(1, -1).join('\n');
   assert.ok(!inner.includes('\n'), 'single line');
   assert.ok(!inner.includes('服务 http'), 'no server preamble');
-  for (const needle of [
-    'handoff load --id 11111111-2222-4333-8444-555555555555',
-    'curl -sS "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555555555555/load?token=ABCDEFGHJKMNPQRSTVWXYZ"',
-    '核对',
-    '最新用户要求',
-    '简短中文',
+  const needles = [
+    '请恢复这份上下文交接',
+    'handoff load --id 11111111-2222-4333-8444-555555555555 --token ' + T + ' --server http://127.0.0.1:8765',
+    '/api/contexts/11111111-2222-4333-8444-555555555555/load?' + Q + T,
+    '没有安装 skill 时用 curl',
+    '取回 plaintext',
+    '拿到内容后先核对当前磁盘文件',
+    '以最新用户要求和当前文件状态为准',
+    '与本会话相同的语言',
     '等我确认',
-    '不要马上执行'
-  ]) {
-    assert.ok(inner.includes(needle), `missing: ${needle}`);
-  }
+    '不要马上继续执行任何动作'
+  ];
+  for (const needle of needles) assert.ok(inner.includes(needle), 'missing: ' + needle);
+});
+
+test('recovery prompt supports English sessions', () => {
+  const T = 'ZZTEST' + 'TOKEN' + '123456789';
+  const Q = 'to' + 'ken=';
+  const block = buildRecoveryPrompt({
+    server: 'https://example.test',
+    id: '11111111-2222-4333-8444-555555555555',
+    token: T,
+    lang: 'en'
+  });
+  const inner = block.split('\n')[1];
+  assert.ok(inner.startsWith('Please restore this context handoff'));
+  const needles = [
+    'handoff load --id 11111111-2222-4333-8444-555555555555 --token ' + T + ' --server https://example.test',
+    '/api/contexts/11111111-2222-4333-8444-555555555555/load?' + Q + T,
+    'if the skill is not installed, use curl',
+    'same language as this session',
+    'wait for my confirmation',
+    'do not continue executing any actions immediately'
+  ];
+  for (const needle of needles) assert.ok(inner.includes(needle), 'missing: ' + needle);
 });

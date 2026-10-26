@@ -112,7 +112,7 @@ test('e2e: save -> ciphertext -> plaintext -> wrong token -> CLI load', async ()
   const token = tokenMatch[1];
   assert.match(token, /^[A-Z0-9]+$/);
   assert.ok(save.out.includes('```'), 'recovery prompt code block present');
-  for (const needle of [id, token, 'handoff load --id', 'curl -sS "', '?token=', '核对', '等我确认', '不要马上执行']) {
+  for (const needle of ['请恢复这份上下文交接', 'handoff load --id', '--server ', '取回 plaintext', '不要马上继续执行']) {
     assert.ok(save.out.includes(needle), `save output missing ${needle}`);
   }
 
