@@ -1,0 +1,18 @@
+#!/bin/sh
+# context-handoff client launcher.
+# Self-contained: resolves its own directory, works from any CWD, no absolute
+# build paths, no third-party dependencies (Node.js >= 20 built-ins only).
+set -e
+
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+if command -v node >/dev/null 2>&1; then
+  NODE=node
+elif [ -x /usr/bin/node ]; then
+  NODE=/usr/bin/node
+else
+  echo "handoff: Node.js >= 20 is required but was not found on PATH" >&2
+  exit 127
+fi
+
+exec "$NODE" "$DIR/../lib/cli.js" "$@"

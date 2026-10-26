@@ -1,0 +1,19 @@
+{
+  "name": "context-handoff",
+  "version": "1.0.0",
+  "description": "Secure context handoff between Agent sessions: Go zero-knowledge relay + Node client/skill with client-side AES-256-GCM.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test:client": "node --test test/client.test.js",
+    "test:e2e": "node --test test/e2e.test.js",
+    "build:server": "cd server-go && GO111MODULE=on CGO_ENABLED=0 go build -o handoff-server .",
+    "test:server": "cd server-go && GO111MODULE=on go test -count=1 ./...",
+    "check": "node --check client/cli.js && node --check client/crypto.js && node --check client/handoff.js && cd server-go && gofmt -l . && GO111MODULE=on go vet ./...",
+    "start": "server-go/handoff-server"
+  },
+  "license": "MIT"
+}
