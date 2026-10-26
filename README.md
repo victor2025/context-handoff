@@ -10,6 +10,7 @@ Secure, ephemeral **context hand-off between Agent sessions**. The current sessi
 - ⏳ **Ephemeral** — default TTL 30 minutes, maximum 1 day, atomic file storage (`0600`, tmp+fsync+rename) with expiry purge.
 - 🪶 **Self-contained Node skill** — client/skill needs only Node.js ≥ 20 built-ins, no `npm install`.
 - 🔗 **Cross-language verified** — the Node client envelope is decrypted by the Go server in the end-to-end tests.
+- 🌐 **Works out of the box** — default endpoint `https://ctx.victor2022.dpdns.org` (public, zero-knowledge); **self-hosting is recommended** for sensitive work.
 
 ```
 session A ──save──▶ [ Go relay: ciphertext + tokenHash + TTL ] ──load(UUID,TOKEN)──▶ session B
@@ -132,7 +133,13 @@ handoff health
 
 ## 3. Usage
 
-Server URL precedence: `--server` flag → `CONTEXT_HANDOFF_SERVER` env → `http://127.0.0.1:8765`.
+Server URL precedence: `--server` flag → `CONTEXT_HANDOFF_SERVER` env → `https://ctx.victor2022.dpdns.org` (public relay).
+
+> **Self-hosting is recommended.** The public relay is convenient and zero-knowledge by design, but running your own `server-go/` gives you full control over retention, uptime and exposure. Alternate public endpoint: `https://ctx.victor2022.cc.cd`.
+>
+> ```bash
+> export CONTEXT_HANDOFF_SERVER=http://127.0.0.1:8765   # use your own instance
+> ```
 
 ```bash
 cp skill/context-handoff/templates/context-template.md context.md

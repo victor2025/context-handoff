@@ -26,7 +26,9 @@ Do **not** use it as durable documentation or a secrets store. Records are short
 
 1. `--server http://host:port` CLI flag
 2. `CONTEXT_HANDOFF_SERVER` environment variable
-3. Default: `http://127.0.0.1:8765`
+3. Default: `https://ctx.victor2022.dpdns.org` (public relay; alternate `https://ctx.victor2022.cc.cd`)
+
+The public relay works out of the box and is zero-knowledge by design, but **self-hosting is recommended**: deploy `server-go/` yourself and point `--server` / `CONTEXT_HANDOFF_SERVER` at your own instance (full control over retention, uptime and exposure).
 
 ## Commands
 
@@ -34,7 +36,8 @@ Health check:
 
 ```bash
 handoff health
-handoff health --server http://127.0.0.1:8765
+handoff health --server https://ctx.victor2022.dpdns.org
+handoff health --server http://127.0.0.1:8765   # self-hosted
 ```
 
 Save (file argument, or `-`/omitted for stdin):
@@ -74,7 +77,7 @@ Keep it compact and factual; the next session will verify against the live disk 
 
 ```
 ✅ context saved (encrypted locally; server only stores ciphertext)
-Server:     http://127.0.0.1:8765
+Server:     https://ctx.victor2022.dpdns.org
 UUID:       <uuid>
 TTL:        1800s
 Expires at: <ISO-8601>
@@ -106,7 +109,7 @@ followed by a fenced code block containing exactly **one sentence** that include
 
 | Symptom | Cause / fix |
 | --- | --- |
-| `fetch failed` / connection error | Server not running or wrong address. Check `handoff health`, `--server`, or `CONTEXT_HANDOFF_SERVER`. |
+| `fetch failed` / connection error | Server unreachable or wrong address. Check `handoff health`; if the public relay is down, retry later or use the alternate `--server https://ctx.victor2022.cc.cd`. For guaranteed availability, self-host `server-go/`. |
 | `NOT_FOUND` | UUID wrong, never existed, or already cleaned up. Ask for a fresh handoff. |
 | `EXPIRED` | TTL elapsed (default 30 min, max 1 day). Ask the sender to save again with a longer TTL. |
 | `WRONG_TOKEN` | TOKEN does not match (case-insensitive; surrounding spaces are trimmed). Re-copy the full TOKEN. |
@@ -121,7 +124,8 @@ followed by a fenced code block containing exactly **one sentence** that include
 - The TOKEN is the only decryption capability. It is generated locally, shown UPPERCASE, and never stored in plaintext by the server. Share the UUID over the normal channel and the TOKEN through a second channel when possible.
 - The server's TOKEN hash (`SHA-256(upper(trim(token)))`) is used **only for verification**, never for key derivation or decryption; API responses never include it.
 - Records expire (default 30 min, max 1 day) and are purged; expired IDs return `EXPIRED`.
-- Run the server bound to `127.0.0.1` for local use. Exposing it requires TLS and an auth boundary you must operate yourself — the protocol alone authenticates only knowledge of the TOKEN.
+- Default endpoint is the public relay `https://ctx.victor2022.dpdns.org`; self-hosting is recommended for sensitive or large contexts. No relay — public or self-hosted — ever sees your plaintext or TOKEN.
+- Run a self-hosted server bound to `127.0.0.1` for local use. Exposing it requires TLS and an auth boundary you must operate yourself — the protocol alone authenticates only knowledge of the TOKEN.
 - The server cannot read your context (zero-knowledge ciphertext), but a malicious server can still reject, delete, or withhold records; verify delivered work against the live disk.
 
 ## Files

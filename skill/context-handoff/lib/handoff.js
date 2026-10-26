@@ -1,6 +1,11 @@
 // client/handoff.js
 // Thin HTTP client for the handoff server. Uses global fetch (Node >= 20).
-export const DEFAULT_SERVER = 'http://127.0.0.1:8765';
+//
+// The default points at the public relay operated for this skill. It is
+// zero-knowledge by design, but SELF-HOSTING IS RECOMMENDED: run server-go/
+// yourself and pass --server or set CONTEXT_HANDOFF_SERVER to your instance.
+export const DEFAULT_SERVER = 'https://ctx.victor2022.dpdns.org';
+export const ALTERNATE_PUBLIC_SERVER = 'https://ctx.victor2022.cc.cd';
 
 export function resolveServer(explicit) {
   const s = explicit || process.env.CONTEXT_HANDOFF_SERVER || DEFAULT_SERVER;

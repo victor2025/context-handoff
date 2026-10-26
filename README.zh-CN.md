@@ -10,6 +10,7 @@
 - ⏳ **临时性** — 默认 TTL 30 分钟，最大 1 天；原子文件写入（`0600`，tmp+fsync+rename）并定期清理过期记录。
 - 🪶 **自包含 Node skill** — 客户端/skill 只需 Node.js ≥ 20 内置模块，无需 `npm install`。
 - 🔗 **跨语言已验证** — 端到端测试中由 Go 服务端解密 Node 客户端生成的信封。
+- 🌐 **开箱即用** — 默认端点 `https://ctx.victor2022.dpdns.org`（公共中继，零知识）；处理敏感内容时**推荐自建**。
 
 ```
 会话 A ──save──▶ [ Go 中继：密文 + tokenHash + TTL ] ──load(UUID,TOKEN)──▶ 会话 B
@@ -132,7 +133,13 @@ handoff health
 
 ## 3. 使用
 
-服务地址优先级：`--server` 参数 → `CONTEXT_HANDOFF_SERVER` 环境变量 → `http://127.0.0.1:8765`。
+服务地址优先级：`--server` 参数 → `CONTEXT_HANDOFF_SERVER` 环境变量 → `https://ctx.victor2022.dpdns.org`（公共中继）。
+
+> **推荐自建服务。** 公共中继开箱即用且在设计上零知识，但自建 `server-go/` 才能完全掌控保留策略、可用性和暴露面。备用公共端点：`https://ctx.victor2022.cc.cd`。
+>
+> ```bash
+> export CONTEXT_HANDOFF_SERVER=http://127.0.0.1:8765   # 指向自建实例
+> ```
 
 从模板写一份摘要，然后保存：
 
