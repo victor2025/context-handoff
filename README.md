@@ -1,5 +1,7 @@
 # context-handoff
 
+English | [简体中文](README.zh-CN.md)
+
 Secure, ephemeral **context hand-off between Agent sessions**. The current session saves a structured Markdown summary; the receiving session restores it with a **UUID + short TOKEN**.
 
 - 🔐 **Client-side encryption** — AES-256-GCM, key derived from the TOKEN with PBKDF2-HMAC-SHA256 (200 000 iterations, random salt + nonce per message).
