@@ -52,10 +52,8 @@ export async function readCiphertext(server, id) {
 }
 
 export async function readPlaintext(server, id, token) {
-  const res = await fetch(`${server}/api/contexts/${id}/load`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token })
-  });
+  // Token travels as a query parameter (canonical GET form).
+  const url = `${server}/api/contexts/${id}/load?token=${encodeURIComponent(token)}`;
+  const res = await fetch(url);
   return parse(res);
 }

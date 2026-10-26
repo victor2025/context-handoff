@@ -59,20 +59,13 @@ async function readMarkdown(fileArg) {
 }
 
 // One-sentence recovery prompt, always inside a fenced code block.
-export function buildRecoveryPrompt({ server, id, token, ttlSeconds, expiresAt }) {
-  const expiresText = expiresAt
-    ? new Date(expiresAt).toISOString()
-    : '(以服务端返回为准)';
-  // Ready-to-run fallback for agents without this skill installed.
-  const curl =
-    `curl -sS -X POST "${server}/api/contexts/${id}/load" ` +
-    `-H "content-type: application/json" -d '{"token":"${token}"}'`;
+export function buildRecoveryPrompt({ server, id, token }) {
+  // Deliberately terse: no "server/UUID" preamble, just the two recovery paths.
   const sentence =
-    `请恢复这份上下文交接（服务 ${server}，UUID ${id}，TOKEN ${token}，${ttlSeconds ?? '?'} 秒后约 ${expiresText} 过期）：` +
-    `装了 context-handoff skill 就执行 handoff load --id ${id} --token ${token} --server ${server}，` +
-    `没装就直接运行 ${curl} 取回 plaintext；` +
-    `拿到内容后先核对当前磁盘文件、服务状态和最新用户要求（如有冲突，以最新用户要求和当前文件状态为准），` +
-    `再用简短中文向我说明你已知道什么、准备做什么，并等我确认，不要马上继续执行任何动作。`;
+    `装了 context-handoff skill 就执行 handoff load --id ${id} --token ${token}；` +
+    `没装就执行 curl -sS "${server}/api/contexts/${id}/load?token=${token}"；` +
+    `恢复后先核对磁盘文件、服务状态和最新用户要求（有冲突以最新要求和当前文件为准），` +
+    `再用简短中文说明你已知道什么、准备做什么，等我确认后再动手，不要马上执行动作。`;
   return '```\n' + sentence + '\n```';
 }
 

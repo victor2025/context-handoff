@@ -227,7 +227,7 @@ func (s *server) handleItem(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusNotFound, errNotFoundRoute, "route not found: "+r.Method+" "+r.URL.Path)
 		return
 	}
-	if load && r.Method != http.MethodPost {
+	if load && r.Method != http.MethodGet && r.Method != http.MethodPost {
 		writeErr(w, http.StatusNotFound, errNotFoundRoute, "route not found: "+r.Method+" "+r.URL.Path)
 		return
 	}
@@ -254,30 +254,37 @@ func (s *server) handleItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load with token.
-	raw, err := io.ReadAll(io.LimitReader(r.Body, 4097))
-	if err != nil {
-		writeErr(w, http.StatusBadRequest, errInvalidRequest, "cannot read body")
-		return
-	}
-	var in struct {
-		Token string `json:"token"`
-	}
-	if len(strings.TrimSpace(string(raw))) > 0 {
-		if err := json.Unmarshal(raw, &in); err != nil {
-			writeErr(w, http.StatusBadRequest, errInvalidJSON, "request body is not valid JSON")
+	// Load with token: GET ?token=... is canonical; POST JSON {"token":"..."}
+	// is kept as a legacy alias.
+	token := ""
+	if r.Method == http.MethodGet {
+		token = r.URL.Query().Get("token")
+	} else {
+		raw, err := io.ReadAll(io.LimitReader(r.Body, 4097))
+		if err != nil {
+			writeErr(w, http.StatusBadRequest, errInvalidRequest, "cannot read body")
 			return
 		}
+		var in struct {
+			Token string `json:"token"`
+		}
+		if len(strings.TrimSpace(string(raw))) > 0 {
+			if err := json.Unmarshal(raw, &in); err != nil {
+				writeErr(w, http.StatusBadRequest, errInvalidJSON, "request body is not valid JSON")
+				return
+			}
+		}
+		token = in.Token
 	}
-	if strings.TrimSpace(in.Token) == "" {
+	if strings.TrimSpace(token) == "" {
 		writeErr(w, http.StatusBadRequest, errInvalidToken, "token is required")
 		return
 	}
-	if !tokenHashMatches(hashTokenHex(in.Token), rec.TokenHash) {
+	if !tokenHashMatches(hashTokenHex(token), rec.TokenHash) {
 		writeErr(w, http.StatusForbidden, errWrongToken, "token does not match")
 		return
 	}
-	plaintext, err := decryptEnvelope(rec.Payload, in.Token)
+	plaintext, err := decryptEnvelope(rec.Payload, token)
 	if err != nil {
 		writeErr(w, http.StatusUnprocessableEntity, errDecryptionFailed, "failed to decrypt context with the supplied token")
 		return

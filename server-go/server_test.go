@@ -319,3 +319,81 @@ func loadPOST(t *testing.T, ts, id string, body map[string]interface{}) (*http.R
 	_ = json.NewDecoder(res.Body).Decode(&out)
 	return res, out
 }
+
+// Canonical read path: GET /api/contexts/:id/load?token=...
+func TestLoadViaGETQuery(t *testing.T) {
+	ts, _, done := testEnv(t)
+	defer done()
+	token := "TOKENGETQUERY0000000001"
+	secret := "# Goal\n\nGET path works"
+	_, out := saveReq(t, ts.URL, validBody(t, secret, token))
+	id := out["id"].(string)
+
+	res, err := http.Get(ts.URL + "/api/contexts/" + id + "/load?token=" + token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	var body map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&body)
+	if res.StatusCode != 200 {
+		t.Fatalf("status=%d body=%v", res.StatusCode, body)
+	}
+	if body["plaintext"] != secret {
+		t.Fatalf("plaintext=%v", body["plaintext"])
+	}
+	raw, _ := json.Marshal(body)
+	if bytes.Contains(raw, []byte("tokenHash")) {
+		t.Fatal("hash leaked")
+	}
+}
+
+func TestLoadViaGETTokenErrors(t *testing.T) {
+	ts, _, done := testEnv(t)
+	defer done()
+	token := "TOKENGETQUERY0000000002"
+	_, out := saveReq(t, ts.URL, validBody(t, "hi", token))
+	id := out["id"].(string)
+
+	// wrong token
+	res, err := http.Get(ts.URL + "/api/contexts/" + id + "/load?token=WRONGTOKEN00000000000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	var body map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&body)
+	if res.StatusCode != 403 || body["error"].(map[string]interface{})["code"] != errWrongToken {
+		t.Fatalf("wrong token: got %d %v", res.StatusCode, body)
+	}
+
+	// missing token
+	res2, err := http.Get(ts.URL + "/api/contexts/" + id + "/load")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res2.Body.Close()
+	var body2 map[string]interface{}
+	json.NewDecoder(res2.Body).Decode(&body2)
+	if res2.StatusCode != 400 || body2["error"].(map[string]interface{})["code"] != errInvalidToken {
+		t.Fatalf("missing token: got %d %v", res2.StatusCode, body2)
+	}
+}
+
+func TestLoadViaGETIsCaseInsensitive(t *testing.T) {
+	ts, _, done := testEnv(t)
+	defer done()
+	token := "TOKENGETQUERY0000000003"
+	_, out := saveReq(t, ts.URL, validBody(t, "mixed", token))
+	id := out["id"].(string)
+	res, err := http.Get(ts.URL + "/api/contexts/" + id + "/load?token=" + strings.ToLower(token))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	var body map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&body)
+	if res.StatusCode != 200 || body["plaintext"] != "mixed" {
+		t.Fatalf("got %d %v", res.StatusCode, body)
+	}
+}

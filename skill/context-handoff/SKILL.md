@@ -87,26 +87,25 @@ Recovery prompt — send this whole block to the receiving Agent session:
 ```
 followed by a fenced code block containing exactly **one sentence** that includes:
 
-- the server address, UUID, TOKEN, and expiry,
-- the `handoff load` command for agents with this skill installed,
-- a **ready-to-run `curl` command** (not a description) for agents without the skill:
-  `curl -sS -X POST "<server>/api/contexts/<id>/load" -H "content-type: application/json" -d '{"token":"<TOKEN>"}'`,
-- an instruction to first verify current disk files, service state, and the latest user request,
+- the `handoff load` command with UUID and TOKEN (skill installed),
+- a **ready-to-run `curl` command** with the token in the query string for agents without the skill:
+  `curl -sS "<server>/api/contexts/<id>/load?token=<TOKEN>"`,
+- an instruction to verify current disk files, service state, and the latest user request,
 - the precedence rule: latest user request and current file state win on conflict,
 - an instruction to give the user a short Chinese summary of what is known and what will be done,
-- an instruction to **wait for user confirmation and not immediately continue executing actions**.
+- an instruction to **wait for user confirmation and not immediately start acting**.
 
 Example (one sentence, one line):
 
 ```
-请恢复这份上下文交接（服务 https://ctx.victor2022.dpdns.org，UUID 11111111-2222-4333-8444-555555555555，TOKEN ABCDEFGHJKMNPQRSTVWXYZ，1800 秒后约 2026-10-26T12:00:00.000Z 过期）：装了 context-handoff skill 就执行 handoff load --id 11111111-2222-4333-8444-555555555555 --token ABCDEFGHJKMNPQRSTVWXYZ --server https://ctx.victor2022.dpdns.org，没装就直接运行 curl -sS -X POST "https://ctx.victor2022.dpdns.org/api/contexts/11111111-2222-4333-8444-555555555555/load" -H "content-type: application/json" -d '{"token":"ABCDEFGHJKMNPQRSTVWXYZ"}' 取回 plaintext；拿到内容后先核对当前磁盘文件、服务状态和最新用户要求（如有冲突，以最新用户要求和当前文件状态为准），再用简短中文向我说明你已知道什么、准备做什么，并等我确认，不要马上继续执行任何动作。
+装了 context-handoff skill 就执行 handoff load --id 11111111-2222-4333-8444-555555555555 --token ABCDEFGHJKMNPQRSTVWXYZ；没装就执行 curl -sS "https://ctx.victor2022.dpdns.org/api/contexts/11111111-2222-4333-8444-555555555555/load?token=ABCDEFGHJKMNPQRSTVWXYZ"；恢复后先核对磁盘文件、服务状态和最新用户要求（有冲突以最新要求和当前文件为准），再用简短中文说明你已知道什么、准备做什么，等我确认后再动手，不要马上执行动作。
 ```
 
 `load` prints only the restored markdown plaintext on stdout (machine/human readable). Errors go to stderr with a non-zero exit code (`NOT_FOUND`, `EXPIRED`, `WRONG_TOKEN`, `DECRYPTION_FAILED`, …).
 
 ## Receiving-session workflow
 
-1. Run the `handoff load` command (or the raw `POST …/load` if the skill is not installed).
+1. Run the `handoff load` command (or the raw `GET …/load?token=…` if the skill is not installed).
 2. Read the summary, then **verify against live reality**: inspect the referenced files, check service/process state, and read the latest user message.
 3. If the summary conflicts with the live disk or the latest user request, **the latest user request and current file state win**.
 4. Reply to the user in short Chinese: what you now know and what you plan to do.
@@ -128,6 +127,7 @@ Example (one sentence, one line):
 ## Security notes
 
 - **Never write secrets into the summary**: no passwords, private keys, tokens, cookies, session IDs, `appSecret`, API keys, `.env` contents, or credential files. Encryption protects data in transit/at rest on the relay; it does not make a secret safe to paste into a chat prompt once decrypted.
+- The TOKEN travels in the URL query string for `load`; URLs may be captured by proxy/access logs. Use HTTPS (the public endpoint is HTTPS), keep TTL short, and self-host when that matters.
 - The TOKEN is the only decryption capability. It is generated locally, shown UPPERCASE, and never stored in plaintext by the server. Share the UUID over the normal channel and the TOKEN through a second channel when possible.
 - The server's TOKEN hash (`SHA-256(upper(trim(token)))`) is used **only for verification**, never for key derivation or decryption; API responses never include it.
 - Records expire (default 30 min, max 1 day) and are purged; expired IDs return `EXPIRED`.

@@ -112,7 +112,7 @@ test('e2e: save -> ciphertext -> plaintext -> wrong token -> CLI load', async ()
   const token = tokenMatch[1];
   assert.match(token, /^[A-Z0-9]+$/);
   assert.ok(save.out.includes('```'), 'recovery prompt code block present');
-  for (const needle of [base, id, token, 'curl -sS -X POST', '核对当前磁盘', '等我确认', '不要马上继续执行']) {
+  for (const needle of [id, token, 'handoff load --id', 'curl -sS "', '?token=', '核对', '等我确认', '不要马上执行']) {
     assert.ok(save.out.includes(needle), `save output missing ${needle}`);
   }
 
@@ -124,23 +124,15 @@ test('e2e: save -> ciphertext -> plaintext -> wrong token -> CLI load', async ()
   assert.ok(!JSON.stringify(ct).includes('tokenHash'));
   assert.ok(!ct.payload.includes('Ship the feature'));
 
-  // Correct token -> Go server ephemeral decrypt.
-  const okRes = await fetch(`${base}/api/contexts/${id}/load`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token })
-  });
+  // Correct token -> Go server ephemeral decrypt (GET ?token=).
+  const okRes = await fetch(`${base}/api/contexts/${id}/load?token=${encodeURIComponent(token)}`);
   assert.equal(okRes.status, 200);
   const ok = await okRes.json();
   assert.equal(ok.plaintext, SAMPLE);
   assert.ok(!Object.prototype.hasOwnProperty.call(ok, 'tokenHash'));
 
-  // Wrong token -> WRONG_TOKEN.
-  const badRes = await fetch(`${base}/api/contexts/${id}/load`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token: 'WRONGTOKEN00000000000' })
-  });
+  // Wrong token -> WRONG_TOKEN (GET ?token=).
+  const badRes = await fetch(`${base}/api/contexts/${id}/load?token=WRONGTOKEN00000000000`);
   assert.equal(badRes.status, 403);
   assert.equal((await badRes.json()).error.code, 'WRONG_TOKEN');
 

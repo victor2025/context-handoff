@@ -159,9 +159,7 @@ handoff load --id 11111111-2222-4333-8444-555555555555 --token ***
 没装 skill？直接请求 API：
 
 ```bash
-curl -sS -X POST "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555555555555/load" \
-  -H 'content-type: application/json' \
-  -d '{"token":"***"}'
+curl -sS "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555555555555/load?token=***"
 ```
 
 ## HTTP API
@@ -171,7 +169,7 @@ curl -sS -X POST "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555
 | `GET` | `/healthz` | — | 健康检查 + 限制 |
 | `POST` | `/api/contexts` | `{payload, tokenHash, ttl?, title?, format?, metadata?}` | 201 + `{id, ttl, expiresAt,…}`（不含哈希） |
 | `GET` | `/api/contexts/:id` | — | 返回**密文** + 元数据 |
-| `POST` | `/api/contexts/:id/load` | `{token}` | 校验哈希、临时解密 → `plaintext` |
+| `GET` | `/api/contexts/:id/load?token=…` | — | 校验哈希、临时解密 → `plaintext` (legacy POST `{token}` accepted) |
 
 信封（`payload`）：
 

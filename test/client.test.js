@@ -71,7 +71,7 @@ test('tampered ciphertext fails authentication', () => {
   assert.throws(() => decryptPayload(env, token));
 });
 
-test('recovery prompt is one sentence in a code block with server/uuid/token', () => {
+test('recovery prompt is one terse sentence with skill and curl paths', () => {
   const block = buildRecoveryPrompt({
     server: 'http://127.0.0.1:8765',
     id: '11111111-2222-4333-8444-555555555555',
@@ -80,20 +80,16 @@ test('recovery prompt is one sentence in a code block with server/uuid/token', (
   });
   assert.ok(block.startsWith('```\n') && block.endsWith('\n```'));
   const inner = block.split('\n').slice(1, -1).join('\n');
-  assert.ok(!inner.includes('\n')); // single sentence / single line
+  assert.ok(!inner.includes('\n'), 'single line');
+  assert.ok(!inner.includes('服务 http'), 'no server preamble');
   for (const needle of [
-    'http://127.0.0.1:8765',
-    '11111111-2222-4333-8444-555555555555',
-    'ABCDEFGHJKMNPQRSTVWXYZ',
-    'curl -sS -X POST',
-    '/api/contexts/11111111-2222-4333-8444-555555555555/load',
-    '-H "content-type: application/json"',
-    '\'{"token":"ABCDEFGHJKMNPQRSTVWXYZ"}\'',
-    '核对当前磁盘',
+    'handoff load --id 11111111-2222-4333-8444-555555555555',
+    'curl -sS "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555555555555/load?token=ABCDEFGHJKMNPQRSTVWXYZ"',
+    '核对',
     '最新用户要求',
     '简短中文',
     '等我确认',
-    '不要马上继续执行'
+    '不要马上执行'
   ]) {
     assert.ok(inner.includes(needle), `missing: ${needle}`);
   }

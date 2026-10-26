@@ -157,9 +157,7 @@ handoff load --id 11111111-2222-4333-8444-555555555555 --token ABCDEFGHJKMNPQRST
 Without the skill, hit the Go API directly:
 
 ```bash
-curl -sS -X POST "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555555555555/load" \
-  -H 'content-type: application/json' \
-  -d '{"token":"ABCDEFGHJKMNPQRSTVWXYZ"}'
+curl -sS "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555555555555/load?token=ABCDEFGHJKMNPQRSTVWXYZ"
 ```
 
 ## HTTP API
@@ -169,7 +167,7 @@ curl -sS -X POST "http://127.0.0.1:8765/api/contexts/11111111-2222-4333-8444-555
 | `GET` | `/healthz` | — | health + limits |
 | `POST` | `/api/contexts` | `{payload, tokenHash, ttl?, title?, format?, metadata?}` | 201 + `{id, ttl, expiresAt,…}` (no hash) |
 | `GET` | `/api/contexts/:id` | — | **ciphertext** + metadata |
-| `POST` | `/api/contexts/:id/load` | `{token}` | verifies hash, ephemeral decrypt → `plaintext` |
+| `GET` | `/api/contexts/:id/load?token=…` | — | verifies hash, ephemeral decrypt → `plaintext` (legacy POST `{token}` accepted) |
 
 Envelope (`payload`):
 
