@@ -87,13 +87,20 @@ Recovery prompt — send this whole block to the receiving Agent session:
 ```
 followed by a fenced code block containing exactly **one sentence** that includes:
 
-- the server address, UUID, and TOKEN,
-- the `handoff load` command (skill installed),
-- a direct HTTP fallback: `POST <server>/api/contexts/<id>/load` with JSON body `{"token":"TOKEN"}` when the skill is not installed,
+- the server address, UUID, TOKEN, and expiry,
+- the `handoff load` command for agents with this skill installed,
+- a **ready-to-run `curl` command** (not a description) for agents without the skill:
+  `curl -sS -X POST "<server>/api/contexts/<id>/load" -H "content-type: application/json" -d '{"token":"<TOKEN>"}'`,
 - an instruction to first verify current disk files, service state, and the latest user request,
 - the precedence rule: latest user request and current file state win on conflict,
-- an instruction to first give the user a short Chinese summary of what is known and what will be done,
-- an instruction to wait for user confirmation before continuing.
+- an instruction to give the user a short Chinese summary of what is known and what will be done,
+- an instruction to **wait for user confirmation and not immediately continue executing actions**.
+
+Example (one sentence, one line):
+
+```
+请恢复这份上下文交接（服务 https://ctx.victor2022.dpdns.org，UUID 11111111-2222-4333-8444-555555555555，TOKEN ABCDEFGHJKMNPQRSTVWXYZ，1800 秒后约 2026-10-26T12:00:00.000Z 过期）：装了 context-handoff skill 就执行 handoff load --id 11111111-2222-4333-8444-555555555555 --token ABCDEFGHJKMNPQRSTVWXYZ --server https://ctx.victor2022.dpdns.org，没装就直接运行 curl -sS -X POST "https://ctx.victor2022.dpdns.org/api/contexts/11111111-2222-4333-8444-555555555555/load" -H "content-type: application/json" -d '{"token":"ABCDEFGHJKMNPQRSTVWXYZ"}' 取回 plaintext；拿到内容后先核对当前磁盘文件、服务状态和最新用户要求（如有冲突，以最新用户要求和当前文件状态为准），再用简短中文向我说明你已知道什么、准备做什么，并等我确认，不要马上继续执行任何动作。
+```
 
 `load` prints only the restored markdown plaintext on stdout (machine/human readable). Errors go to stderr with a non-zero exit code (`NOT_FOUND`, `EXPIRED`, `WRONG_TOKEN`, `DECRYPTION_FAILED`, …).
 

@@ -62,13 +62,17 @@ async function readMarkdown(fileArg) {
 export function buildRecoveryPrompt({ server, id, token, ttlSeconds, expiresAt }) {
   const expiresText = expiresAt
     ? new Date(expiresAt).toISOString()
-    : '(expiry from server response)';
+    : '(以服务端返回为准)';
+  // Ready-to-run fallback for agents without this skill installed.
+  const curl =
+    `curl -sS -X POST "${server}/api/contexts/${id}/load" ` +
+    `-H "content-type: application/json" -d '{"token":"${token}"}'`;
   const sentence =
-    `请用 context-handoff skill 从服务 ${server} 恢复上下文 UUID=${id} TOKEN=${token}` +
-    `（${ttlSeconds ?? '?'} 秒后约 ${expiresText} 过期）：若已安装 skill 执行 handoff load --id ${id} --token ${token} --server ${server}，` +
-    `若未安装 skill 则直接 POST ${server}/api/contexts/${id}/load（JSON body: {"token":"${token}"}）读取 plaintext；` +
-    `恢复后必须先核对当前磁盘文件、服务状态和最新用户要求，如有冲突以最新用户要求和当前文件状态为准，` +
-    `先用简短中文告诉用户你已知道什么、准备做什么，并等待用户确认后才能继续执行。`;
+    `请恢复这份上下文交接（服务 ${server}，UUID ${id}，TOKEN ${token}，${ttlSeconds ?? '?'} 秒后约 ${expiresText} 过期）：` +
+    `装了 context-handoff skill 就执行 handoff load --id ${id} --token ${token} --server ${server}，` +
+    `没装就直接运行 ${curl} 取回 plaintext；` +
+    `拿到内容后先核对当前磁盘文件、服务状态和最新用户要求（如有冲突，以最新用户要求和当前文件状态为准），` +
+    `再用简短中文向我说明你已知道什么、准备做什么，并等我确认，不要马上继续执行任何动作。`;
   return '```\n' + sentence + '\n```';
 }
 

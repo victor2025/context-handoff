@@ -112,7 +112,7 @@ test('e2e: save -> ciphertext -> plaintext -> wrong token -> CLI load', async ()
   const token = tokenMatch[1];
   assert.match(token, /^[A-Z0-9]+$/);
   assert.ok(save.out.includes('```'), 'recovery prompt code block present');
-  for (const needle of [base, id, token, 'POST', '核对当前磁盘', '等待用户确认']) {
+  for (const needle of [base, id, token, 'curl -sS -X POST', '核对当前磁盘', '等我确认', '不要马上继续执行']) {
     assert.ok(save.out.includes(needle), `save output missing ${needle}`);
   }
 

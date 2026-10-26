@@ -85,11 +85,15 @@ test('recovery prompt is one sentence in a code block with server/uuid/token', (
     'http://127.0.0.1:8765',
     '11111111-2222-4333-8444-555555555555',
     'ABCDEFGHJKMNPQRSTVWXYZ',
-    'POST',
+    'curl -sS -X POST',
+    '/api/contexts/11111111-2222-4333-8444-555555555555/load',
+    '-H "content-type: application/json"',
+    '\'{"token":"ABCDEFGHJKMNPQRSTVWXYZ"}\'',
     '核对当前磁盘',
     '最新用户要求',
     '简短中文',
-    '等待用户确认'
+    '等我确认',
+    '不要马上继续执行'
   ]) {
     assert.ok(inner.includes(needle), `missing: ${needle}`);
   }
